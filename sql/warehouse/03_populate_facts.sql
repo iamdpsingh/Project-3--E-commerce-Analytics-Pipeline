@@ -1,42 +1,66 @@
--- populate_facts.sql
---
--- Populates fact_orders and fact_order_items from the staging layer.
--- Joins to dimension tables to resolve natural keys → surrogate keys.
--- line_total is computed here as quantity × unit_price.
+-- ==============================================================================
+-- BIGQUERY WAREHOUSE: FACTS
+-- ==============================================================================
+-- Builds fact_orders and fact_order_items directly from staging.
+-- Handles multi-vendor order definition (Vendor C has order_id, A/B use user_session)
+-- ==============================================================================
 
-TRUNCATE warehouse.fact_orders CASCADE;
-
-INSERT INTO warehouse.fact_orders (
-    order_id, customer_sk, date_sk, order_date,
-    total_items, total_amount, status
+-- 1. fact_orders
+CREATE OR REPLACE TABLE `ecommerce-pipe-ds30.ecommerce_warehouse.fact_orders`
+PARTITION BY DATE(order_date)
+CLUSTER BY user_id
+AS
+WITH purchase_events AS (
+    SELECT 
+        event_time,
+        source_vendor,
+        user_id,
+        user_session,
+        order_id,
+        product_id,
+        price
+    FROM `ecommerce-pipe-ds30.ecommerce_staging.all_events`
+    WHERE event_type = 'purchase'
+),
+order_groups AS (
+    SELECT 
+        -- Vendor C provides order_id. Vendor A & B use user_session as the cart ID.
+        COALESCE(CAST(order_id AS STRING), user_session) AS unified_order_id,
+        user_id,
+        MAX(source_vendor) AS source_vendor,
+        MIN(event_time) AS order_date,
+        COUNT(product_id) AS total_items,
+        SUM(price) AS total_amount,
+        'completed' AS status
+    FROM purchase_events
+    WHERE COALESCE(CAST(order_id AS STRING), user_session) IS NOT NULL
+    GROUP BY unified_order_id, user_id
 )
-SELECT
-    o.order_id,
-    dc.customer_sk,
-    TO_CHAR(o.order_date AT TIME ZONE 'UTC', 'YYYYMMDD')::INT AS date_sk,
-    o.order_date,
-    o.total_items,
-    o.total_amount,
-    o.status
-FROM staging.orders o
-JOIN warehouse.dim_customer dc ON dc.user_id  = o.user_id
-JOIN warehouse.dim_date     dd ON dd.date_sk  = TO_CHAR(o.order_date AT TIME ZONE 'UTC', 'YYYYMMDD')::INT;
+SELECT 
+    unified_order_id AS order_id,
+    user_id,
+    source_vendor,
+    CAST(FORMAT_DATE('%Y%m%d', order_date) AS INT64) AS date_sk,
+    order_date,
+    total_items,
+    total_amount,
+    status
+FROM order_groups;
 
-TRUNCATE warehouse.fact_order_items CASCADE;
-
-INSERT INTO warehouse.fact_order_items (
-    order_item_id, order_sk, product_sk, date_sk,
-    quantity, unit_price, line_total
-)
-SELECT
-    oi.order_item_id,
-    fo.order_sk,
-    dp.product_sk,
-    TO_CHAR(oi.event_time AT TIME ZONE 'UTC', 'YYYYMMDD')::INT AS date_sk,
-    oi.quantity,
-    oi.price                    AS unit_price,
-    (oi.quantity * oi.price)    AS line_total
-FROM staging.order_items oi
-JOIN warehouse.fact_orders  fo ON fo.order_id   = oi.order_id
-JOIN warehouse.dim_product  dp ON dp.product_id = oi.product_id
-JOIN warehouse.dim_date     dd ON dd.date_sk     = TO_CHAR(oi.event_time AT TIME ZONE 'UTC', 'YYYYMMDD')::INT;
+-- 2. fact_order_items
+CREATE OR REPLACE TABLE `ecommerce-pipe-ds30.ecommerce_warehouse.fact_order_items`
+PARTITION BY DATE(event_time)
+CLUSTER BY order_id, product_id
+AS
+SELECT 
+    GENERATE_UUID() AS order_item_id,
+    COALESCE(CAST(order_id AS STRING), user_session) AS order_id,
+    product_id,
+    CAST(FORMAT_DATE('%Y%m%d', event_time) AS INT64) AS date_sk,
+    event_time,
+    1 AS quantity,  -- Raw events represent 1 item per row
+    price AS unit_price,
+    price AS line_total
+FROM `ecommerce-pipe-ds30.ecommerce_staging.all_events`
+WHERE event_type = 'purchase'
+AND COALESCE(CAST(order_id AS STRING), user_session) IS NOT NULL;
