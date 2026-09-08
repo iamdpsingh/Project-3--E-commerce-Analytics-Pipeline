@@ -56,6 +56,19 @@ This project was built utilizing modern data engineering principles, leveraging 
 
 ---
 
+## 💡 Skills Demonstrated
+
+| Area | Concepts & Techniques Applied |
+|------|-----------------------------|
+| **Data Engineering** | Cloud ELT pipelines, Data Lake architecture, automated ingestion |
+| **Cloud (GCP)** | Compute Engine VMs, Cloud Storage (GCS), BigQuery orchestration |
+| **Data Warehousing** | Star Schema design, dimensional modeling, partitioning & clustering |
+| **Advanced SQL** | `UNION ALL` schema merging, Window functions, CTEs, Data Type Casting |
+| **Python** | SDK Integration (`google-cloud-bigquery`), UI development (Streamlit), Data Quality |
+| **Business Intelligence** | Executive KPI modeling, live dashboarding, time-series revenue tracking |
+
+---
+
 ## 📂 Project Structure & File Guide
 
 ```text
