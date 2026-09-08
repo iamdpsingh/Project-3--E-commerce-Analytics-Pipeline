@@ -95,15 +95,15 @@ ecommerce-analytics-pipeline/
 
 ---
 
-## 🚧 Challenges & Solutions
+## 🚧 Challenges & Evolution
 
-### 💥 Problem 1: Out-of-Memory (OOM) Errors on Local Hardware
-**Challenge:** Initially, data processing was handled locally. Attempting to process 133 million rows (14GB) on a laptop instantly caused memory limits to crash the pipeline.
-**Solution:** I discarded the local pipeline and fully migrated to an **ELT (Extract, Load, Transform)** architecture on GCP. Data is pulled directly into Google Cloud Storage via disposable Compute Engine VMs, and then immediately loaded into BigQuery where all transformations are handled by highly parallelized SQL.
+### 💥 Phase 1: The Local to GCP Migration (Solving OOM Errors)
+**Challenge:** Initially, the data processing pipeline was built to run locally. However, attempting to process 133 million rows (14GB) on a laptop instantly caused memory limits to crash the pipeline.
+**Solution:** I discarded the local processing constraints and executed a full **Local to GCP Migration**. The data is now pulled directly into Google Cloud Storage via disposable Compute Engine VMs, and then immediately loaded into an **ELT (Extract, Load, Transform)** architecture in BigQuery, where all transformations are handled by highly parallelized SQL.
 
-### 💥 Problem 2: Looker Studio Server Constraints
+### 💥 Phase 2: Custom Streamlit Implementation (Solving Server Constraints)
 **Challenge:** The original plan was to build the final visualization layer using Looker Studio. Unfortunately, I hit server connection limits during the dashboard creation phase, threatening to delay the project's deadline.
-**Solution:** I immediately pivoted and developed a custom **Python Streamlit dashboard** connected live to BigQuery via the `google-cloud-bigquery` SDK. This guaranteed delivery before the deadline and provided a significantly more professional, developer-first presentation layer!
+**Solution:** I executed a rapid pivot and developed a custom **Python Streamlit Implementation** connected live to BigQuery via the `google-cloud-bigquery` SDK. This guaranteed delivery before the deadline and provided a significantly more professional, developer-first presentation layer!
 
 ---
 
