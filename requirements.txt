@@ -12,9 +12,10 @@ python-dotenv>=1.0.1
 numpy==1.26.4
 
 # ─────────────────────────────────────────────
-# GCP — added during migration phase
+# GCP & Dashboard — added during migration phase
 # ─────────────────────────────────────────────
-# google-cloud-storage
-# google-cloud-bigquery
-# google-cloud-bigquery-storage
-# pyarrow
+google-cloud-storage
+google-cloud-bigquery
+db-dtypes
+streamlit
+plotly
