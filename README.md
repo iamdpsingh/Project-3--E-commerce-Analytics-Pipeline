@@ -41,6 +41,21 @@ graph LR
 
 ---
 
+## 🛠️ Technology Stack
+
+This project was built utilizing modern data engineering principles, leveraging a blend of local processing engines and hyperscale cloud infrastructure:
+
+- **Cloud Platform:** Google Cloud Platform (GCP)
+- **Data Lake:** Google Cloud Storage (GCS)
+- **Data Warehouse:** Google BigQuery *(Serverless, Columnar, partitioned & clustered)*
+- **Local Database:** PostgreSQL *(for local incremental load testing)*
+- **Data Orchestration:** Python (`google-cloud-bigquery`), Bash Shell Scripting
+- **Data Processing:** Pandas, SQL (BigQuery Standard SQL)
+- **Data Visualization:** Python, Streamlit, Plotly Express
+- **AI Acceleration:** Generative AI (Antigravity/Gemini) for rapid SQL migration and UI scaffolding.
+
+---
+
 ## 📂 Project Structure & File Guide
 
 ```text
