@@ -1,6 +1,19 @@
-# 🚀 Enterprise Multi-Vendor E-Commerce Data Platform (GCP)
+<div align="center">
+  
+# 🚀 Enterprise Multi-Vendor E-Commerce Data Platform
+**A Massive Big Data ELT Pipeline on Google Cloud Platform (GCP)**
 
-Welcome to the **Multi-Vendor E-Commerce Data Platform**! What started as a local pandas project has evolved into a massive, highly-scalable cloud architecture on Google Cloud Platform (GCP). This project processes and unifies **133+ million rows of data** (16GB+) across three different simulated company acquisitions into a single, cohesive BigQuery Data Warehouse.
+![GCP](https://img.shields.io/badge/GoogleCloud-%234285F4.svg?style=for-the-badge&logo=google-cloud&logoColor=white)
+![BigQuery](https://img.shields.io/badge/BigQuery-%23669DF6.svg?style=for-the-badge&logo=google-cloud&logoColor=white)
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![Streamlit](https://img.shields.io/badge/Streamlit-%23FE4B4B.svg?style=for-the-badge&logo=streamlit&logoColor=white)
+![SQL](https://img.shields.io/badge/SQL-%2300758F.svg?style=for-the-badge&logo=postgresql&logoColor=white)
+
+</div>
+
+Welcome to the **Multi-Vendor E-Commerce Data Platform**! What started as a local Pandas project has evolved into a highly-scalable cloud architecture on Google Cloud Platform. This project ingests, processes, and unifies **133+ million rows of data (16GB+)** across three different simulated company acquisitions into a single, cohesive BigQuery Data Warehouse.
+
+> ⚡ **Future Ready:** While currently executing batch ELT workloads, this decoupled architecture is designed to be easily adaptable for **continuous data flow streaming** (via Pub/Sub and Dataflow) to power live, real-time analytics!
 
 ---
 
@@ -28,22 +41,48 @@ graph LR
 
 ---
 
+## 📂 Project Structure & File Guide
+
+```text
+ecommerce-analytics-pipeline/
+│
+├── src/
+│   ├── gcp_kaggle_download_vendors.sh # Bash automation to stream Kaggle -> GCS
+│   ├── gcp_load.py                    # Python orchestrator triggering BQ Load Jobs
+│   └── dashboard.py                   # Live Streamlit dashboard connecting to BQ
+│
+├── sql/
+│   ├── staging/
+│   │   └── 01_raw_to_staging.sql      # Unifies 3 vendor schemas via UNION ALL & Casting
+│   ├── warehouse/
+│   │   ├── 01_populate_dim_date.sql   # Generates Date dimension spine (GENERATE_DATE_ARRAY)
+│   │   ├── 02_populate_dimensions.sql # Populates dim_customer & dim_product
+│   │   └── 03_populate_facts.sql      # Populates fact_orders & fact_order_items
+│   └── analytics/
+│       └── 01_create_views.sql        # 6 analytical views (KPIs, revenue, products, etc.)
+│
+├── requirements.txt                   # Project dependencies (Streamlit, BigQuery, etc.)
+└── README.md                          # You are here!
+```
+
+---
+
 ## 🚧 Challenges & Solutions
 
-### Problem 1: Out-of-Memory (OOM) Errors on Local Hardware
-**Challenge:** Initially, the data processing was handled locally via Python pandas. However, attempting to process 133 million rows (14GB) on a laptop instantly caused memory limits to crash the pipeline.
-**Solution:** I discarded the local pandas pipeline and fully migrated to an **ELT (Extract, Load, Transform)** architecture on GCP. The data is pulled directly from Kaggle into Google Cloud Storage via disposable Compute Engine VMs, and then immediately loaded into BigQuery where all transformations are handled by highly parallelized SQL.
+### 💥 Problem 1: Out-of-Memory (OOM) Errors on Local Hardware
+**Challenge:** Initially, data processing was handled locally. Attempting to process 133 million rows (14GB) on a laptop instantly caused memory limits to crash the pipeline.
+**Solution:** I discarded the local pipeline and fully migrated to an **ELT (Extract, Load, Transform)** architecture on GCP. Data is pulled directly into Google Cloud Storage via disposable Compute Engine VMs, and then immediately loaded into BigQuery where all transformations are handled by highly parallelized SQL.
 
-### Problem 2: Looker Studio Server Constraints
-**Challenge:** The original plan was to build the final visualization layer using Looker Studio. Unfortunately, I hit server constraint limits during the dashboard creation phase, threatening to delay the project's deadline.
-**Solution:** I immediately pivoted and developed a custom **Python Streamlit dashboard** connected live to BigQuery via the `google-cloud-bigquery` SDK. This guaranteed delivery before the deadline and actually provided a more professional, developer-first presentation layer!
+### 💥 Problem 2: Looker Studio Server Constraints
+**Challenge:** The original plan was to build the final visualization layer using Looker Studio. Unfortunately, I hit server connection limits during the dashboard creation phase, threatening to delay the project's deadline.
+**Solution:** I immediately pivoted and developed a custom **Python Streamlit dashboard** connected live to BigQuery via the `google-cloud-bigquery` SDK. This guaranteed delivery before the deadline and provided a significantly more professional, developer-first presentation layer!
 
 ---
 
 ## 🤖 Leveraging AI to Accelerate Delivery
 
 Building a multi-vendor cloud platform from scratch usually takes weeks. I extensively used **AI Coding Assistants** (Antigravity/Gemini) to dramatically accelerate the development timeline:
-1. **Automated SQL Translation:** AI was used to instantly rewrite hundreds of lines of PostgreSQL staging scripts into optimized BigQuery Standard SQL, successfully handling data type mismatches (like `NULL` casting across `UNION ALL`).
+1. **Automated SQL Translation:** AI was used to instantly rewrite hundreds of lines of PostgreSQL staging scripts into optimized BigQuery Standard SQL, successfully handling complex data type mismatches.
 2. **Dashboard Generation:** The Streamlit dashboard (`src/dashboard.py`) was scaffolded entirely via AI prompt engineering, complete with BigQuery authentication and Plotly visualizations, reducing a 2-day UI build into a 5-minute generation!
 
 ---
@@ -58,7 +97,7 @@ If you want to replicate this pipeline, follow these instructions:
 - `gcloud` CLI installed locally.
 
 ### 2. Authentication
-Log in to GCP locally to allow the Python orchestrator to work:
+Log in to GCP locally to allow the Python orchestrator to authenticate:
 ```bash
 gcloud auth application-default login
 gcloud config set project your-project-id
@@ -75,7 +114,7 @@ KAGGLE_KEY="your-key"
 ```
 
 ### 4. Execute the Pipeline
-1. **Download Data:** Deploy a temporary VM and run `src/gcp_kaggle_download_vendors.sh` to stream the Kaggle data into your Cloud Storage bucket.
+1. **Download Data:** Run the bash scripts on a GCP Compute Engine VM to stream the Kaggle data into your Cloud Storage bucket.
 2. **Ingest to BigQuery:** Run the Python orchestrator to trigger BigQuery Load Jobs.
    ```bash
    python src/gcp_load.py
@@ -90,7 +129,7 @@ KAGGLE_KEY="your-key"
    ```
 
 ### 5. Launch the Streamlit Dashboard
-With the data loaded in BigQuery, start the dashboard!
+With the data loaded in BigQuery, start the live dashboard!
 ```bash
 pip install -r requirements.txt
 streamlit run src/dashboard.py
