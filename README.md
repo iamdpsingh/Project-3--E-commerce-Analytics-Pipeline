@@ -87,25 +87,57 @@ Building a multi-vendor cloud platform from scratch usually takes weeks. I exten
 
 ---
 
-## 🛠️ How to Setup & Run on GCP
+## 🛠️ How to Setup & Run
 
-If you want to replicate this pipeline, follow these instructions:
+This project supports two execution modes: **Local Development** (via PostgreSQL) and **Cloud Production** (via GCP BigQuery).
 
-### 1. Prerequisites
+### Option A: Local Pipeline (PostgreSQL)
+Ideal for testing or running the pipeline on smaller subsets of data.
+
+**1. Set up environment**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+**2. Configure Database Credentials**
+Edit `.env` with your PostgreSQL connection details:
+```env
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+POSTGRES_DB=ecommerce_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_password
+```
+
+**3. Create Database & Run Pipeline**
+```bash
+createdb ecommerce_db
+
+# Full load (first run or complete refresh)
+python -m src.main
+
+# Incremental load (append new records only)
+python -m src.main --mode incremental
+```
+
+---
+
+### Option B: Cloud Pipeline (GCP BigQuery)
+Required for processing the full 133M+ row datasets without Out-Of-Memory errors.
+
+**1. Prerequisites & Authentication**
 - A Google Cloud Project with Billing enabled.
-- BigQuery and Cloud Storage APIs enabled.
 - `gcloud` CLI installed locally.
-
-### 2. Authentication
-Log in to GCP locally to allow the Python orchestrator to authenticate:
 ```bash
 gcloud auth application-default login
 gcloud config set project your-project-id
 ```
 
-### 3. Setup Environment
-Populate your `.env` file in the root directory:
-```bash
+**2. Setup Environment Variables**
+Populate your `.env` file:
+```env
 GCP_PROJECT_ID="your-project-id"
 GCP_BUCKET_NAME="your-bucket-name"
 GCP_REGION="us-central1"
@@ -113,22 +145,23 @@ KAGGLE_USERNAME="your-username"
 KAGGLE_KEY="your-key"
 ```
 
-### 4. Execute the Pipeline
-1. **Download Data:** Run the bash scripts on a GCP Compute Engine VM to stream the Kaggle data into your Cloud Storage bucket.
-2. **Ingest to BigQuery:** Run the Python orchestrator to trigger BigQuery Load Jobs.
-   ```bash
-   python src/gcp_load.py
-   ```
-3. **Run Transformations:** Execute the BigQuery SQL to build the Warehouse.
-   ```bash
-   bq query --nouse_legacy_sql < sql/staging/01_raw_to_staging.sql
-   bq query --nouse_legacy_sql < sql/warehouse/01_populate_dim_date.sql
-   bq query --nouse_legacy_sql < sql/warehouse/02_populate_dimensions.sql
-   bq query --nouse_legacy_sql < sql/warehouse/03_populate_facts.sql
-   bq query --nouse_legacy_sql < sql/analytics/01_create_views.sql
-   ```
+**3. Execute the Cloud Pipeline**
+```bash
+# 1. Download Data via VM to Cloud Storage
+# (Run the bash scripts in src/ on a GCP Compute Engine VM)
 
-### 5. Launch the Streamlit Dashboard
+# 2. Ingest to BigQuery
+python src/gcp_load.py
+
+# 3. Run Transformations
+bq query --nouse_legacy_sql < sql/staging/01_raw_to_staging.sql
+bq query --nouse_legacy_sql < sql/warehouse/01_populate_dim_date.sql
+bq query --nouse_legacy_sql < sql/warehouse/02_populate_dimensions.sql
+bq query --nouse_legacy_sql < sql/warehouse/03_populate_facts.sql
+bq query --nouse_legacy_sql < sql/analytics/01_create_views.sql
+```
+
+**4. Launch the Streamlit Dashboard**
 With the data loaded in BigQuery, start the live dashboard!
 ```bash
 pip install -r requirements.txt
